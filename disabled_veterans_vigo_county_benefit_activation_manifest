@@ -1,0 +1,86 @@
+from dataclasses import dataclass
+import time
+
+PROGRAMS = [
+    "VA Disability Compensation",
+    "VA Healthcare Enrollment",
+    "Indiana Property Tax Exemption"
+]
+
+OFFICES = {
+    "VA Disability Compensation": {
+        "name": "VA Terre Haute Clinic (CBOC)",
+        "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+        "phone": "800-427-5882",
+        "email": None
+    },
+    "VA Healthcare Enrollment": {
+        "name": "VA Terre Haute Clinic (CBOC)",
+        "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+        "phone": "800-427-5882",
+        "email": None
+    },
+    "Indiana Property Tax Exemption": {
+        "name": "Vigo County Veterans Assistance Office",
+        "address": "163 Oak Street, Terre Haute, IN 47807",
+        "phone": "812-462-3261",
+        "email": "veterans@vigocounty.in.gov"
+    }
+}
+
+DOCUMENTS = {
+    "VA Disability Compensation": ["VA Form 21-526EZ", "DD214", "Medical Evidence"],
+    "VA Healthcare Enrollment": ["VA Form 10-10EZ", "DD214"],
+    "Indiana Property Tax Exemption": ["State Form 51781", "Disability Rating Letter", "Residency Proof"]
+}
+
+@dataclass
+class SubmissionPacket:
+    program: str
+    member_name: str
+    email: str
+    phone: str
+    eligible: bool
+    dd214_attached: bool
+
+def activate_benefit(packet: SubmissionPacket):
+    if not packet.eligible:
+        return {
+            "program": packet.program,
+            "activation_state": "DENIED",
+            "reason": "Eligibility requirements not met",
+            "timestamp": int(time.time())
+        }
+
+    office = OFFICES[packet.program]
+    docs = DOCUMENTS[packet.program]
+
+    activation = {
+        "program": packet.program,
+        "member": {
+            "name": packet.member_name,
+            "email": packet.email,
+            "phone": packet.phone
+        },
+        "office": office,
+        "documents_verified": packet.dd214_attached,
+        "required_documents": docs,
+        "activation_state": "APPROVED",
+        "timestamp": int(time.time())
+    }
+
+    return activation
+
+def demo():
+    sample = SubmissionPacket(
+        program="VA Disability Compensation",
+        member_name="DAO Veteran Member",
+        email="member@example.com",
+        phone="000-000-0000",
+        eligible=True,
+        dd214_attached=True
+    )
+    print(activate_benefit(sample))
+
+if __name__ == "__main__":
+    demo()
