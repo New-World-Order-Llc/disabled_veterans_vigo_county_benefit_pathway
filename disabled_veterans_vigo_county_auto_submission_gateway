@@ -1,0 +1,84 @@
+from dataclasses import dataclass
+import time
+
+OFFICES = {
+    "county": {
+        "name": "Vigo County Veterans Assistance Office",
+        "address": "163 Oak Street, Terre Haute, IN 47807",
+        "phone": "812-462-3261",
+        "email": "veterans@vigocounty.in.gov"
+    },
+    "va": {
+        "name": "VA Terre Haute Clinic (CBOC)",
+        "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+        "phone": "800-427-5882",
+        "email": None
+    },
+    "dav": {
+        "name": "DAV Chapter 57",
+        "address": "1801 W Fort Harrison Road, Terre Haute, IN 47804",
+        "phone": "812-232-3910",
+        "email": "dav57th@gmail.com"
+    }
+}
+
+DOCUMENTS = {
+    "VA Disability Compensation": ["VA Form 21-526EZ", "DD214", "Medical Evidence"],
+    "VA Healthcare Enrollment": ["VA Form 10-10EZ", "DD214"],
+    "Indiana Property Tax Exemption": ["State Form 51781", "Disability Rating Letter", "Residency Proof"]
+}
+
+@dataclass
+class FusedProgramPacket:
+    program: str
+    member_name: str
+    email: str
+    phone: str
+    disability_rating: int
+    dd214_attached: bool
+    eligible: bool
+
+def generate_submission(packet: FusedProgramPacket):
+    if not packet.eligible:
+        return {
+            "program": packet.program,
+            "status": "NOT_ELIGIBLE",
+            "timestamp": int(time.time())
+        }
+
+    # Office routing rules
+    if packet.program == "VA Disability Compensation":
+        office = OFFICES["va"]
+    elif packet.program == "VA Healthcare Enrollment":
+        office = OFFICES["va"]
+    else:
+        office = OFFICES["county"]
+
+    return {
+        "program": packet.program,
+        "member": {
+            "name": packet.member_name,
+            "email": packet.email,
+            "phone": packet.phone
+        },
+        "office": office,
+        "documents_required": DOCUMENTS[packet.program],
+        "dd214_attached": packet.dd214_attached,
+        "submission_ready": True,
+        "timestamp": int(time.time())
+    }
+
+def demo():
+    sample = FusedProgramPacket(
+        program="VA Disability Compensation",
+        member_name="DAO Veteran Member",
+        email="member@example.com",
+        phone="000-000-0000",
+        disability_rating=70,
+        dd214_attached=True,
+        eligible=True
+    )
+    print(generate_submission(sample))
+
+if __name__ == "__main__":
+    demo()
