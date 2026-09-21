@@ -1,0 +1,99 @@
+import json
+import time
+import hashlib
+from dataclasses import dataclass
+
+@dataclass
+class LedgerEntry:
+    entry_type: str
+    subsystem: str
+    payload: dict
+    timestamp: int
+    checksum: str
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+class BeastOperationalLedger:
+    def __init__(self):
+        self.entries = []
+
+    def record(self, entry_type, subsystem_name, payload):
+        timestamp = int(time.time())
+        payload = payload or {}
+
+        entry_payload = {
+            "entry_type": entry_type,
+            "subsystem": subsystem_name,
+            "payload": payload,
+            "timestamp": timestamp
+        }
+
+        checksum = compute_checksum(entry_payload)
+
+        entry = LedgerEntry(
+            entry_type=entry_type,
+            subsystem=subsystem_name,
+            payload=payload,
+            timestamp=timestamp,
+            checksum=checksum
+        )
+
+        self.entries.append(entry)
+
+        return {
+            "entry_type": entry_type,
+            "subsystem": subsystem_name,
+            "timestamp": timestamp,
+            "checksum": checksum,
+            "sealed": True
+        }
+
+    def export_ledger(self):
+        manifest = {
+            "system": "Beast System 3.0",
+            "entries": [
+                {
+                    "entry_type": e.entry_type,
+                    "subsystem": e.subsystem,
+                    "payload": e.payload,
+                    "timestamp": e.timestamp,
+                    "checksum": e.checksum
+                }
+                for e in self.entries
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+        manifest["ledger_checksum"] = compute_checksum(manifest)
+        manifest["sealed"] = True
+
+        return manifest
+
+def demo():
+    ledger = BeastOperationalLedger()
+
+    ledger.record(
+        "ACTIVATION",
+        "beast_system_global_activation_packet",
+        {"activation_state": "FULL_SYSTEM_ACTIVE"}
+    )
+
+    ledger.record(
+        "GOVERNANCE",
+        "beast_system_continuous_governance_stream",
+        {"event": "LIFECYCLE_TRANSITION", "phase": "OPERATIONAL"}
+    )
+
+    ledger.record(
+        "RESILIENCE",
+        "beast_system_resilience_matrix",
+        {"state": "DEGRADED", "action": "INITIATE_STABILIZATION"}
+    )
+
+    print("OPERATIONAL LEDGER:")
+    print(json.dumps(ledger.export_ledger(), indent=2))
+
+if __name__ == "__main__":
+    demo()
