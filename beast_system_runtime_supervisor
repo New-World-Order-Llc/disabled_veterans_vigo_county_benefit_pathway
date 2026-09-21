@@ -1,0 +1,122 @@
+import json
+import time
+from dataclasses import dataclass
+
+@dataclass
+class RuntimeEvent:
+    subsystem: str
+    event_type: str
+    details: dict
+    timestamp: int
+    severity: str
+
+@dataclass
+class HealthReport:
+    subsystem: str
+    status: str
+    last_event: dict
+    timestamp: int
+
+class BeastRuntimeSupervisor:
+    def __init__(self):
+        self.event_log = []
+        self.health_status = {}
+
+    def log_event(self, subsystem_name, event_type, details, severity="INFO"):
+        timestamp = int(time.time())
+
+        event = RuntimeEvent(
+            subsystem=subsystem_name,
+            event_type=event_type,
+            details=details,
+            timestamp=timestamp,
+            severity=severity
+        )
+
+        self.event_log.append(event)
+
+        # Update health status
+        status = "HEALTHY"
+        if severity in ["WARNING", "ERROR", "CRITICAL"]:
+            status = "DEGRADED" if severity == "WARNING" else "FAILED"
+
+        self.health_status[subsystem_name] = HealthReport(
+            subsystem=subsystem_name,
+            status=status,
+            last_event=event.__dict__,
+            timestamp=timestamp
+        )
+
+        return {
+            "subsystem": subsystem_name,
+            "event_type": event_type,
+            "severity": severity,
+            "timestamp": timestamp,
+            "sealed": True
+        }
+
+    def get_health(self, subsystem_name):
+        return self.health_status.get(subsystem_name, {
+            "subsystem": subsystem_name,
+            "status": "UNKNOWN",
+            "timestamp": int(time.time())
+        })
+
+    def export_supervision_manifest(self):
+        manifest = {
+            "system": "Beast System 3.0",
+            "health_reports": {
+                subsystem: {
+                    "status": report.status,
+                    "last_event": report.last_event,
+                    "timestamp": report.timestamp
+                }
+                for subsystem, report in self.health_status.items()
+            },
+            "events": [
+                {
+                    "subsystem": e.subsystem,
+                    "event_type": e.event_type,
+                    "severity": e.severity,
+                    "timestamp": e.timestamp
+                }
+                for e in self.event_log
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+        manifest["supervision_checksum"] = self._checksum(manifest)
+        manifest["sealed"] = True
+
+        return manifest
+
+    def _checksum(self, payload):
+        encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+        import hashlib
+        return hashlib.sha256(encoded).hexdigest()
+
+def demo():
+    supervisor = BeastRuntimeSupervisor()
+
+    supervisor.log_event(
+        "disabled_veterans_vigo_county_benefit_pathway",
+        "pipeline_run",
+        {"duration_ms": 1200},
+        severity="INFO"
+    )
+
+    supervisor.log_event(
+        "beast_system_global_orchestration",
+        "run_failure",
+        {"error": "Timeout"},
+        severity="ERROR"
+    )
+
+    print("HEALTH REPORT:")
+    print(json.dumps(supervisor.get_health("beast_system_global_orchestration"), indent=2))
+
+    print("\nSUPERVISION MANIFEST:")
+    print(json.dumps(supervisor.export_supervision_manifest(), indent=2))
+
+if __name__ == "__main__":
+    demo()
