@@ -1,0 +1,77 @@
+import json
+import hashlib
+import time
+from dataclasses import dataclass
+
+@dataclass
+class ChainComponent:
+    name: str
+    payload: dict
+    checksum: str
+    timestamp: int
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+def verify_component(component: ChainComponent):
+    valid = compute_checksum(component.payload) == component.checksum
+    return {
+        "component": component.name,
+        "checksum_valid": valid,
+        "timestamp": component.timestamp,
+        "payload_keys": list(component.payload.keys())
+    }
+
+def verify_chain(components: list):
+    matrix = {
+        "verification_timestamp": int(time.time()),
+        "components": [],
+        "chain_integrity": True
+    }
+
+    for comp in components:
+        result = verify_component(comp)
+        matrix["components"].append(result)
+        if not result["checksum_valid"]:
+            matrix["chain_integrity"] = False
+
+    return matrix
+
+def demo():
+    intake_payload = {"member": "DAO Veteran Member", "disability_rating": 70}
+    eligibility_payload = {"VA Disability Compensation": True}
+    activation_payload = {"VA Disability Compensation": "APPROVED"}
+    export_payload = {"casefile_exported": True}
+
+    components = [
+        ChainComponent(
+            name="Intake",
+            payload=intake_payload,
+            checksum=compute_checksum(intake_payload),
+            timestamp=int(time.time())
+        ),
+        ChainComponent(
+            name="Eligibility",
+            payload=eligibility_payload,
+            checksum=compute_checksum(eligibility_payload),
+            timestamp=int(time.time())
+        ),
+        ChainComponent(
+            name="Activation",
+            payload=activation_payload,
+            checksum=compute_checksum(activation_payload),
+            timestamp=int(time.time())
+        ),
+        ChainComponent(
+            name="Export",
+            payload=export_payload,
+            checksum=compute_checksum(export_payload),
+            timestamp=int(time.time())
+        )
+    ]
+
+    print(json.dumps(verify_chain(components), indent=2))
+
+if __name__ == "__main__":
+    demo()
