@@ -1,0 +1,65 @@
+from dataclasses import dataclass
+import time
+
+@dataclass
+class AuditEvent:
+    event_type: str
+    program: str
+    member_name: str
+    details: dict
+    timestamp: int
+
+class AuditTrail:
+    def __init__(self):
+        self.events = []
+
+    def log(self, event_type, program, member_name, details):
+        event = AuditEvent(
+            event_type=event_type,
+            program=program,
+            member_name=member_name,
+            details=details,
+            timestamp=int(time.time())
+        )
+        self.events.append(event)
+
+    def export(self):
+        return [
+            {
+                "event_type": e.event_type,
+                "program": e.program,
+                "member_name": e.member_name,
+                "details": e.details,
+                "timestamp": e.timestamp
+            }
+            for e in self.events
+        ]
+
+def demo():
+    audit = AuditTrail()
+
+    audit.log(
+        event_type="INTAKE_RECEIVED",
+        program="VA Disability Compensation",
+        member_name="DAO Veteran Member",
+        details={"intake_valid": True}
+    )
+
+    audit.log(
+        event_type="SUBMISSION_SENT",
+        program="VA Disability Compensation",
+        member_name="DAO Veteran Member",
+        details={"office": "VA Terre Haute Clinic (CBOC)"}
+    )
+
+    audit.log(
+        event_type="ACTIVATION_APPROVED",
+        program="Indiana Property Tax Exemption",
+        member_name="DAO Veteran Member",
+        details={"documents_verified": True}
+    )
+
+    print(audit.export())
+
+if __name__ == "__main__":
+    demo()
