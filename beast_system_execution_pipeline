@@ -1,0 +1,57 @@
+import time
+import json
+
+from beast_system_integration_layer import BeastSystemIntegrationLayer
+
+class BeastSystemExecutionPipeline:
+    def __init__(self, wallet_address):
+        self.wallet_address = wallet_address
+        self.system = BeastSystemIntegrationLayer(wallet_address)
+
+    def execute_subsystem(self, subsystem_name, payload):
+        print(f"[EXECUTION] Running subsystem: {subsystem_name}")
+
+        result = self.system.run_full_system(subsystem_name, payload)
+
+        print(f"[EXECUTION] Subsystem {subsystem_name} completed.")
+        return result
+
+    def execute_all(self, subsystem_registry):
+        results = {}
+        timestamp = int(time.time())
+
+        print("[PIPELINE] Starting full Beast System 3.0 execution cycle.")
+
+        for subsystem_name, payload in subsystem_registry.items():
+            print(f"[PIPELINE] Executing subsystem: {subsystem_name}")
+            results[subsystem_name] = self.execute_subsystem(subsystem_name, payload)
+
+        print("[PIPELINE] Full execution cycle completed.")
+        return {
+            "timestamp": timestamp,
+            "results": results,
+            "sealed": True
+        }
+
+def demo():
+    wallet = "0cad6a0d-1462-47eb-853e-17521d57322e"
+    pipeline = BeastSystemExecutionPipeline(wallet)
+
+    subsystem_registry = {
+        "disabled_veterans_vigo_county_benefit_pathway": {
+            "activation_state": "ACTIVATED",
+            "casefiles": 1,
+            "activation_timestamp": int(time.time())
+        },
+        "beast_system_global_orchestration": {
+            "activation_state": "ACTIVATED",
+            "runs": 12,
+            "activation_timestamp": int(time.time())
+        }
+    }
+
+    result = pipeline.execute_all(subsystem_registry)
+    print(json.dumps(result, indent=2))
+
+if __name__ == "__main__":
+    demo()
