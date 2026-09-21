@@ -1,0 +1,75 @@
+from dataclasses import dataclass
+import json
+import time
+import hashlib
+
+@dataclass
+class CasefileRecord:
+    member_name: str
+    dob: str
+    disability_rating: int
+    programs: list
+    casefile: dict
+    timestamp: int
+
+def generate_checksum(payload: dict):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+def export_casefile(record: CasefileRecord):
+    export_packet = {
+        "member": {
+            "name": record.member_name,
+            "dob": record.dob,
+            "disability_rating": record.disability_rating
+        },
+        "programs": record.programs,
+        "casefile": record.casefile,
+        "export_timestamp": int(time.time())
+    }
+
+    export_packet["integrity_checksum"] = generate_checksum(export_packet)
+
+    return export_packet
+
+def demo():
+    sample_casefile = {
+        "member": {
+            "name": "DAO Veteran Member",
+            "dob": "1975-06-15",
+            "address": "Terre Haute, IN 47807",
+            "phone": "000-000-0000",
+            "email": "member@example.com",
+            "service_branch": "Army",
+            "disability_rating": 70,
+            "dd214_on_file": True
+        },
+        "program_activations": [
+            {
+                "program": "VA Disability Compensation",
+                "activation_state": "APPROVED",
+                "office": {
+                    "name": "VA Terre Haute Clinic (CBOC)",
+                    "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+                    "phone": "800-427-5882"
+                },
+                "documents_verified": True,
+                "activation_timestamp": int(time.time())
+            }
+        ],
+        "casefile_timestamp": int(time.time())
+    }
+
+    record = CasefileRecord(
+        member_name="DAO Veteran Member",
+        dob="1975-06-15",
+        disability_rating=70,
+        programs=["VA Disability Compensation"],
+        casefile=sample_casefile,
+        timestamp=int(time.time())
+    )
+
+    print(export_casefile(record))
+
+if __name__ == "__main__":
+    demo()
