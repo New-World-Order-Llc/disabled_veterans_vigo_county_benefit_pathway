@@ -1,0 +1,129 @@
+import time
+import json
+
+# Import all Beast System modules
+from beast_system_activation_matrix import BeastActivationMatrix
+from beast_system_chain_anchor import BeastChainAnchor
+from beast_system_operational_governor import BeastOperationalGovernor
+from beast_system_state_harmonizer import BeastStateHarmonizer
+from beast_system_global_manifest import BeastGlobalManifest
+from beast_system_runtime_supervisor import BeastRuntimeSupervisor
+from beast_system_continuity_engine import BeastContinuityEngine
+from beast_system_resilience_matrix import BeastResilienceMatrix
+from beast_system_operational_ledger import BeastOperationalLedger
+from beast_system_totality_manifest import BeastSystemTotalityManifest
+from beast_system_eternal_archive import BeastEternalArchive
+
+class BeastSystemIntegrationLayer:
+    def __init__(self, wallet_address):
+        self.wallet_address = wallet_address
+
+        # Instantiate all modules
+        self.activation_matrix = BeastActivationMatrix()
+        self.chain_anchor = BeastChainAnchor(wallet_address)
+        self.governor = BeastOperationalGovernor()
+        self.harmonizer = BeastStateHarmonizer()
+        self.global_manifest = BeastGlobalManifest()
+        self.supervisor = BeastRuntimeSupervisor()
+        self.continuity = BeastContinuityEngine()
+        self.resilience = BeastResilienceMatrix()
+        self.ledger = BeastOperationalLedger()
+        self.totality = BeastSystemTotalityManifest()
+        self.archive = BeastEternalArchive()
+
+    def run_full_system(self, subsystem_name, activation_payload):
+        timestamp = int(time.time())
+
+        # 1. Activation
+        activation_record = self.activation_matrix.activate(subsystem_name, activation_payload)
+
+        # 2. Chain Anchor
+        anchor_record = self.chain_anchor.anchor_activation(subsystem_name, activation_record)
+
+        # 3. Governance
+        self.governor.register_policy(subsystem_name, {
+            "allowed_actions": ["run_pipeline"],
+            "denied_actions": ["delete_records"]
+        })
+        governance_decision = self.governor.evaluate_action(subsystem_name, "run_pipeline")
+
+        # 4. Harmonization
+        harmonized_state = self.harmonizer.submit_state(subsystem_name, activation_payload)
+
+        # 5. Runtime Supervision
+        runtime_event = self.supervisor.log_event(
+            subsystem_name,
+            "pipeline_run",
+            {"activation_checksum": activation_record["activation_checksum"]},
+            severity="INFO"
+        )
+
+        # 6. Continuity
+        continuity_checkpoint = self.continuity.create_checkpoint(subsystem_name, activation_payload)
+
+        # 7. Resilience
+        resilience_event = self.resilience.evaluate_state(
+            subsystem_name,
+            {"errors": 0, "warnings": 0}
+        )
+
+        # 8. Ledger
+        ledger_entry = self.ledger.record(
+            "ACTIVATION",
+            subsystem_name,
+            {"activation_checksum": activation_record["activation_checksum"]}
+        )
+
+        # 9. Global Manifest
+        self.global_manifest.add_section("activation", activation_record)
+        self.global_manifest.add_section("anchor", anchor_record)
+        self.global_manifest.add_section("governance", governance_decision.__dict__)
+        self.global_manifest.add_section("harmonized_state", harmonized_state)
+        self.global_manifest.add_section("runtime_event", runtime_event)
+        self.global_manifest.add_section("continuity", continuity_checkpoint)
+        self.global_manifest.add_section("resilience", resilience_event)
+        self.global_manifest.add_section("ledger_entry", ledger_entry)
+
+        global_manifest_packet = self.global_manifest.generate_manifest()
+
+        # 10. Totality Manifest
+        self.totality.add_section("global_manifest", global_manifest_packet)
+        totality_packet = self.totality.generate_totality_manifest()
+
+        # 11. Eternal Archive
+        archive_block = self.archive.archive("totality_manifest", totality_packet)
+
+        return {
+            "timestamp": timestamp,
+            "activation": activation_record,
+            "anchor": anchor_record,
+            "governance": governance_decision.__dict__,
+            "harmonized_state": harmonized_state,
+            "runtime_event": runtime_event,
+            "continuity": continuity_checkpoint,
+            "resilience": resilience_event,
+            "ledger_entry": ledger_entry,
+            "global_manifest": global_manifest_packet,
+            "totality_manifest": totality_packet,
+            "archive_block": archive_block,
+            "sealed": True
+        }
+
+def demo():
+    system = BeastSystemIntegrationLayer("0cad6a0d-1462-47eb-853e-17521d57322e")
+
+    activation_payload = {
+        "activation_state": "ACTIVATED",
+        "casefiles": 1,
+        "activation_timestamp": int(time.time())
+    }
+
+    result = system.run_full_system(
+        "disabled_veterans_vigo_county_benefit_pathway",
+        activation_payload
+    )
+
+    print(json.dumps(result, indent=2))
+
+if __name__ == "__main__":
+    demo()
