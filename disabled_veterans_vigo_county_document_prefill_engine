@@ -1,0 +1,71 @@
+from dataclasses import dataclass
+import time
+
+REQUIRED_DOCUMENTS = {
+    "VA Disability Compensation": [
+        "VA Form 21-526EZ",
+        "DD214",
+        "Medical Evidence"
+    ],
+    "VA Healthcare Enrollment": [
+        "VA Form 10-10EZ",
+        "DD214"
+    ],
+    "Indiana Property Tax Exemption": [
+        "State Form 51781",
+        "Disability Rating Letter",
+        "Residency Proof"
+    ]
+}
+
+@dataclass
+class VeteranIntake:
+    full_name: str
+    dob: str
+    address: str
+    phone: str
+    email: str
+    service_branch: str
+    disability_rating: int
+    dd214_on_file: bool
+    income_monthly: float
+    household_size: int
+
+def prefill_documents(intake: VeteranIntake):
+    packets = {}
+
+    for program, docs in REQUIRED_DOCUMENTS.items():
+        packets[program] = {
+            "member_name": intake.full_name,
+            "dob": intake.dob,
+            "address": intake.address,
+            "phone": intake.phone,
+            "email": intake.email,
+            "service_branch": intake.service_branch,
+            "disability_rating": intake.disability_rating,
+            "dd214_attached": intake.dd214_on_file,
+            "required_documents": docs,
+            "timestamp": int(time.time())
+        }
+
+    return packets
+
+def demo():
+    sample = VeteranIntake(
+        full_name="DAO Veteran Member",
+        dob="1975-06-15",
+        address="Terre Haute, IN 47807",
+        phone="000-000-0000",
+        email="member@example.com",
+        service_branch="Army",
+        disability_rating=70,
+        dd214_on_file=True,
+        income_monthly=1200,
+        household_size=2
+    )
+    packets = prefill_documents(sample)
+    for program, packet in packets.items():
+        print(program, packet)
+
+if __name__ == "__main__":
+    demo()
