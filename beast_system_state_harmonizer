@@ -1,0 +1,100 @@
+import json
+import time
+from dataclasses import dataclass
+
+@dataclass
+class HarmonizedStateRecord:
+    subsystem: str
+    state: dict
+    harmonized_timestamp: int
+    checksum: str
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    import hashlib
+    return hashlib.sha256(encoded).hexdigest()
+
+class BeastStateHarmonizer:
+    def __init__(self):
+        self.subsystem_states = {}
+        self.harmonized_records = []
+
+    def submit_state(self, subsystem_name, state_payload):
+        timestamp = int(time.time())
+        checksum = compute_checksum(state_payload)
+
+        record = HarmonizedStateRecord(
+            subsystem=subsystem_name,
+            state=state_payload,
+            harmonized_timestamp=timestamp,
+            checksum=checksum
+        )
+
+        self.subsystem_states[subsystem_name] = state_payload
+        self.harmonized_records.append(record)
+
+        return {
+            "subsystem": subsystem_name,
+            "harmonized_timestamp": timestamp,
+            "checksum": checksum,
+            "sealed": True
+        }
+
+    def harmonize(self):
+        timestamp = int(time.time())
+
+        merged_state = {
+            subsystem: state
+            for subsystem, state in self.subsystem_states.items()
+        }
+
+        harmonized_checksum = compute_checksum(merged_state)
+
+        return {
+            "system": "Beast System 3.0",
+            "harmonized_state": merged_state,
+            "harmonized_timestamp": timestamp,
+            "harmonized_checksum": harmonized_checksum,
+            "sealed": True
+        }
+
+    def export_harmonizer_manifest(self):
+        manifest = {
+            "system": "Beast System 3.0",
+            "records": [
+                {
+                    "subsystem": r.subsystem,
+                    "timestamp": r.harmonized_timestamp,
+                    "checksum": r.checksum
+                }
+                for r in self.harmonized_records
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+        manifest["manifest_checksum"] = compute_checksum(manifest)
+        manifest["sealed"] = True
+
+        return manifest
+
+def demo():
+    harmonizer = BeastStateHarmonizer()
+
+    harmonizer.submit_state(
+        "disabled_veterans_vigo_county_benefit_pathway",
+        {"activation_state": "ACTIVATED", "casefiles": 1}
+    )
+
+    harmonizer.submit_state(
+        "beast_system_global_orchestration",
+        {"runs": 12, "last_run_status": "COMPLETED"}
+    )
+
+    print("HARMONIZED STATE:")
+    print(json.dumps(harmonizer.harmonize(), indent=2))
+
+    print("\nHARMONIZER MANIFEST:")
+    print(json.dumps(harmonizer.export_harmonizer_manifest(), indent=2))
+
+if __name__ == "__main__":
+    demo()
