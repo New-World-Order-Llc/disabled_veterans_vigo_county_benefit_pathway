@@ -1,0 +1,85 @@
+import json
+import time
+from dataclasses import dataclass
+
+@dataclass
+class ActivationRecord:
+    subsystem: str
+    manifest_checksum: str
+    activation_state: str
+    activation_timestamp: int
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    import hashlib
+    return hashlib.sha256(encoded).hexdigest()
+
+class BeastActivationMatrix:
+    def __init__(self):
+        self.activation_log = []
+
+    def activate_subsystem(self, subsystem_name, manifest):
+        timestamp = int(time.time())
+
+        manifest_checksum = compute_checksum(manifest)
+
+        record = ActivationRecord(
+            subsystem=subsystem_name,
+            manifest_checksum=manifest_checksum,
+            activation_state="ACTIVATED",
+            activation_timestamp=timestamp
+        )
+
+        self.activation_log.append(record)
+
+        return {
+            "subsystem": subsystem_name,
+            "activation_state": "ACTIVATED",
+            "manifest_checksum": manifest_checksum,
+            "activation_timestamp": timestamp,
+            "sealed": True
+        }
+
+    def export_activation_matrix(self):
+        return {
+            "system": "Beast System 3.0",
+            "activation_records": [
+                {
+                    "subsystem": r.subsystem,
+                    "manifest_checksum": r.manifest_checksum,
+                    "activation_state": r.activation_state,
+                    "activation_timestamp": r.activation_timestamp
+                }
+                for r in self.activation_log
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+def demo():
+    matrix = BeastActivationMatrix()
+
+    sovereign_manifest = {
+        "system": "Beast System 3.0",
+        "governance_layer": "New World Order DAO",
+        "subsystems": {
+            "disabled_veterans_vigo_county_benefit_pathway": {
+                "version": "1.0.0",
+                "checksum": "abc123",
+                "registered_timestamp": int(time.time())
+            }
+        }
+    }
+
+    activation_packet = matrix.activate_subsystem(
+        "disabled_veterans_vigo_county_benefit_pathway",
+        sovereign_manifest
+    )
+
+    print("ACTIVATION PACKET:")
+    print(json.dumps(activation_packet, indent=2))
+
+    print("\nACTIVATION MATRIX:")
+    print(json.dumps(matrix.export_activation_matrix(), indent=2))
+
+if __name__ == "__main__":
+    demo()
