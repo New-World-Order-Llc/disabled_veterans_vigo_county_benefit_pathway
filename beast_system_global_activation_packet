@@ -1,0 +1,94 @@
+import json
+import time
+import hashlib
+from dataclasses import dataclass
+
+@dataclass
+class ActivationSection:
+    name: str
+    payload: dict
+    checksum: str
+    timestamp: int
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+class BeastGlobalActivationPacket:
+    def __init__(self):
+        self.sections = []
+
+    def add_section(self, name, payload):
+        timestamp = int(time.time())
+        checksum = compute_checksum(payload)
+
+        section = ActivationSection(
+            name=name,
+            payload=payload,
+            checksum=checksum,
+            timestamp=timestamp
+        )
+
+        self.sections.append(section)
+
+        return {
+            "section": name,
+            "checksum": checksum,
+            "timestamp": timestamp,
+            "sealed": True
+        }
+
+    def generate_packet(self):
+        timestamp = int(time.time())
+
+        packet_payload = {
+            "system": "Beast System 3.0",
+            "activation_timestamp": timestamp,
+            "sections": {
+                section.name: {
+                    "payload": section.payload,
+                    "checksum": section.checksum,
+                    "timestamp": section.timestamp
+                }
+                for section in self.sections
+            }
+        }
+
+        packet_payload["global_activation_checksum"] = compute_checksum(packet_payload)
+        packet_payload["sealed"] = True
+
+        return packet_payload
+
+def demo():
+    packet = BeastGlobalActivationPacket()
+
+    # Example sections
+    packet.add_section("harmonized_state", {
+        "disabled_veterans_vigo_county_benefit_pathway": {"activation_state": "ACTIVATED"},
+        "beast_system_global_orchestration": {"runs": 12}
+    })
+
+    packet.add_section("governance", {
+        "decisions": [{"subsystem": "disabled_veterans_vigo_county_benefit_pathway",
+                       "action": "run_pipeline", "allowed": True}]
+    })
+
+    packet.add_section("chain_anchor", {
+        "anchors": [{"subsystem": "disabled_veterans_vigo_county_benefit_pathway",
+                     "anchor_id": "ANCHOR-XYZ"}]
+    })
+
+    packet.add_section("resilience", {
+        "events": [{"subsystem": "beast_system_global_orchestration",
+                    "state": "CRITICAL", "action_taken": "TRIGGER_RECOVERY"}]
+    })
+
+    packet.add_section("continuity", {
+        "checkpoints": [{"subsystem": "disabled_veterans_vigo_county_benefit_pathway",
+                         "state": {"casefiles": 1}}]
+    })
+
+    print(json.dumps(packet.generate_packet(), indent=2))
+
+if __name__ == "__main__":
+    demo()
