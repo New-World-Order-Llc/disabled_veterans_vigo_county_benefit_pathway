@@ -1,0 +1,109 @@
+import json
+import time
+import hashlib
+from dataclasses import dataclass
+
+@dataclass
+class LifecycleEvent:
+    phase: str
+    subsystem: str
+    details: dict
+    timestamp: int
+    checksum: str
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+class BeastLifecycleController:
+    def __init__(self):
+        self.lifecycle_log = []
+        self.current_phase = "UNINITIALIZED"
+
+    def transition_phase(self, new_phase, subsystem_name, details=None):
+        timestamp = int(time.time())
+        details = details or {}
+
+        payload = {
+            "phase": new_phase,
+            "subsystem": subsystem_name,
+            "details": details,
+            "timestamp": timestamp
+        }
+
+        checksum = compute_checksum(payload)
+
+        event = LifecycleEvent(
+            phase=new_phase,
+            subsystem=subsystem_name,
+            details=details,
+            timestamp=timestamp,
+            checksum=checksum
+        )
+
+        self.lifecycle_log.append(event)
+        self.current_phase = new_phase
+
+        return {
+            "phase": new_phase,
+            "subsystem": subsystem_name,
+            "details": details,
+            "timestamp": timestamp,
+            "checksum": checksum,
+            "sealed": True
+        }
+
+    def export_lifecycle_manifest(self):
+        manifest = {
+            "system": "Beast System 3.0",
+            "current_phase": self.current_phase,
+            "events": [
+                {
+                    "phase": e.phase,
+                    "subsystem": e.subsystem,
+                    "details": e.details,
+                    "timestamp": e.timestamp,
+                    "checksum": e.checksum
+                }
+                for e in self.lifecycle_log
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+        manifest["lifecycle_checksum"] = compute_checksum(manifest)
+        manifest["sealed"] = True
+
+        return manifest
+
+def demo():
+    controller = BeastLifecycleController()
+
+    controller.transition_phase(
+        "INITIALIZED",
+        "disabled_veterans_vigo_county_benefit_pathway",
+        {"message": "Subsystem initialized"}
+    )
+
+    controller.transition_phase(
+        "ACTIVATED",
+        "beast_system_global_orchestration",
+        {"activation_packet": "GLOBAL-ACTIVATION-XYZ"}
+    )
+
+    controller.transition_phase(
+        "OPERATIONAL",
+        "beast_system_runtime_supervisor",
+        {"status": "Supervisor online"}
+    )
+
+    controller.transition_phase(
+        "EVOLVING",
+        "beast_system_resilience_matrix",
+        {"update": "Resilience thresholds expanded"}
+    )
+
+    print("LIFECYCLE MANIFEST:")
+    print(json.dumps(controller.export_lifecycle_manifest(), indent=2))
+
+if __name__ == "__main__":
+    demo()
