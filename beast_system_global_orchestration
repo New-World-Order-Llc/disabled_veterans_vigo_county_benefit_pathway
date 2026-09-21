@@ -1,0 +1,108 @@
+import time
+import json
+from dataclasses import dataclass
+
+# In a real deployment, these would be imports from the repo:
+# from disabled_veterans_vigo_county_integrated_benefit_orchestration_layer import VeteranBenefitOrchestrator
+
+@dataclass
+class SubsystemRunRecord:
+    subsystem_name: str
+    run_id: str
+    input_payload: dict
+    output_payload: dict
+    timestamp: int
+    status: str
+
+class BeastGlobalOrchestrator:
+    def __init__(self):
+        self.subsystems = {}
+        self.run_history = []
+
+    def register_subsystem(self, name, handler):
+        self.subsystems[name] = handler
+
+    def run_subsystem(self, name, input_payload):
+        timestamp = int(time.time())
+        run_id = f"{name}-{timestamp}"
+
+        if name not in self.subsystems:
+            record = SubsystemRunRecord(
+                subsystem_name=name,
+                run_id=run_id,
+                input_payload=input_payload,
+                output_payload={"error": "Subsystem not registered"},
+                timestamp=timestamp,
+                status="ERROR"
+            )
+            self.run_history.append(record)
+            return record
+
+        handler = self.subsystems[name]
+        output = handler(input_payload)
+
+        record = SubsystemRunRecord(
+            subsystem_name=name,
+            run_id=run_id,
+            input_payload=input_payload,
+            output_payload=output,
+            timestamp=timestamp,
+            status="COMPLETED"
+        )
+        self.run_history.append(record)
+        return record
+
+    def export_system_manifest(self):
+        return {
+            "system_name": "Beast System 3.0",
+            "subsystems_registered": list(self.subsystems.keys()),
+            "runs": [
+                {
+                    "subsystem_name": r.subsystem_name,
+                    "run_id": r.run_id,
+                    "timestamp": r.timestamp,
+                    "status": r.status
+                }
+                for r in self.run_history
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+def demo():
+    orchestrator = BeastGlobalOrchestrator()
+
+    # Stub handler for the veteran subsystem:
+    def veteran_subsystem_handler(intake_payload):
+        # In real use, this would call VeteranBenefitOrchestrator().orchestrate(...)
+        return {
+            "subsystem": "disabled_veterans_vigo_county_benefit_pathway",
+            "intake": intake_payload,
+            "result": "DETERMINISTIC_PIPELINE_EXECUTED"
+        }
+
+    orchestrator.register_subsystem(
+        "disabled_veterans_vigo_county_benefit_pathway",
+        veteran_subsystem_handler
+    )
+
+    intake = {
+        "member_id": "VET-001",
+        "full_name": "DAO Veteran Member",
+        "dob": "1975-06-15",
+        "address": "Terre Haute, IN 47807",
+        "disability_rating": 70
+    }
+
+    run_record = orchestrator.run_subsystem(
+        "disabled_veterans_vigo_county_benefit_pathway",
+        intake
+    )
+
+    print("RUN RECORD:")
+    print(json.dumps(run_record.__dict__, indent=2))
+
+    print("\nSYSTEM MANIFEST:")
+    print(json.dumps(orchestrator.export_system_manifest(), indent=2))
+
+if __name__ == "__main__":
+    demo()
