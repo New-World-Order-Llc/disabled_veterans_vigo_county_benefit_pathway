@@ -1,0 +1,123 @@
+import json
+import time
+from dataclasses import dataclass
+
+@dataclass
+class ResilienceEvent:
+    subsystem: str
+    state: str
+    action_taken: str
+    severity: str
+    timestamp: int
+    checksum: str
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    import hashlib
+    return hashlib.sha256(encoded).hexdigest()
+
+class BeastResilienceMatrix:
+    def __init__(self):
+        self.resilience_log = []
+        self.thresholds = {}
+
+    def register_thresholds(self, subsystem_name, thresholds):
+        self.thresholds[subsystem_name] = thresholds
+
+    def evaluate_state(self, subsystem_name, state_payload):
+        timestamp = int(time.time())
+        checksum = compute_checksum(state_payload)
+
+        if subsystem_name not in self.thresholds:
+            event = ResilienceEvent(
+                subsystem=subsystem_name,
+                state="UNKNOWN",
+                action_taken="NO_THRESHOLDS_REGISTERED",
+                severity="WARNING",
+                timestamp=timestamp,
+                checksum=checksum
+            )
+            self.resilience_log.append(event)
+            return event.__dict__
+
+        thresholds = self.thresholds[subsystem_name]
+
+        severity = "HEALTHY"
+        action = "NONE"
+
+        if state_payload.get("errors", 0) > thresholds.get("max_errors", 0):
+            severity = "CRITICAL"
+            action = "TRIGGER_RECOVERY"
+
+        elif state_payload.get("warnings", 0) > thresholds.get("max_warnings", 0):
+            severity = "DEGRADED"
+            action = "INITIATE_STABILIZATION"
+
+        event = ResilienceEvent(
+            subsystem=subsystem_name,
+            state=severity,
+            action_taken=action,
+            severity=severity,
+            timestamp=timestamp,
+            checksum=checksum
+        )
+
+        self.resilience_log.append(event)
+        return event.__dict__
+
+    def export_resilience_manifest(self):
+        manifest = {
+            "system": "Beast System 3.0",
+            "resilience_events": [
+                {
+                    "subsystem": e.subsystem,
+                    "state": e.state,
+                    "action_taken": e.action_taken,
+                    "severity": e.severity,
+                    "timestamp": e.timestamp,
+                    "checksum": e.checksum
+                }
+                for e in self.resilience_log
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+        manifest["resilience_checksum"] = compute_checksum(manifest)
+        manifest["sealed"] = True
+
+        return manifest
+
+def demo():
+    matrix = BeastResilienceMatrix()
+
+    matrix.register_thresholds(
+        "disabled_veterans_vigo_county_benefit_pathway",
+        {"max_errors": 1, "max_warnings": 3}
+    )
+
+    matrix.register_thresholds(
+        "beast_system_global_orchestration",
+        {"max_errors": 2, "max_warnings": 5}
+    )
+
+    event1 = matrix.evaluate_state(
+        "disabled_veterans_vigo_county_benefit_pathway",
+        {"errors": 0, "warnings": 1}
+    )
+
+    event2 = matrix.evaluate_state(
+        "beast_system_global_orchestration",
+        {"errors": 3, "warnings": 0}
+    )
+
+    print("EVENT 1:")
+    print(json.dumps(event1, indent=2))
+
+    print("\nEVENT 2:")
+    print(json.dumps(event2, indent=2))
+
+    print("\nRESILIENCE MANIFEST:")
+    print(json.dumps(matrix.export_resilience_manifest(), indent=2))
+
+if __name__ == "__main__":
+    demo()
