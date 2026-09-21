@@ -1,0 +1,83 @@
+import json
+import time
+import hashlib
+from dataclasses import dataclass
+
+@dataclass
+class ArchiveBlock:
+    block_id: str
+    payload: dict
+    checksum: str
+    timestamp: int
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+class BeastEternalArchive:
+    def __init__(self):
+        self.blocks = []
+
+    def archive(self, block_name, payload):
+        timestamp = int(time.time())
+        checksum = compute_checksum(payload)
+        block_id = f"{block_name}-{checksum[:12]}-{timestamp}"
+
+        block = ArchiveBlock(
+            block_id=block_id,
+            payload=payload,
+            checksum=checksum,
+            timestamp=timestamp
+        )
+
+        self.blocks.append(block)
+
+        return {
+            "block_id": block_id,
+            "checksum": checksum,
+            "timestamp": timestamp,
+            "sealed": True
+        }
+
+    def export_archive(self):
+        manifest = {
+            "system": "Beast System 3.0",
+            "archive_blocks": [
+                {
+                    "block_id": b.block_id,
+                    "checksum": b.checksum,
+                    "timestamp": b.timestamp
+                }
+                for b in self.blocks
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+        manifest["archive_checksum"] = compute_checksum(manifest)
+        manifest["sealed"] = True
+
+        return manifest
+
+def demo():
+    archive = BeastEternalArchive()
+
+    archive.archive(
+        "totality_manifest",
+        {"system": "Beast System 3.0", "state": "FULLY_ACTIVATED"}
+    )
+
+    archive.archive(
+        "operational_ledger",
+        {"entries": [{"entry_type": "ACTIVATION", "subsystem": "global"}]}
+    )
+
+    archive.archive(
+        "governance_stream",
+        {"events": [{"event_type": "LIFECYCLE_TRANSITION", "phase": "OPERATIONAL"}]}
+    )
+
+    print("ETERNAL ARCHIVE:")
+    print(json.dumps(archive.export_archive(), indent=2))
+
+if __name__ == "__main__":
+    demo()
