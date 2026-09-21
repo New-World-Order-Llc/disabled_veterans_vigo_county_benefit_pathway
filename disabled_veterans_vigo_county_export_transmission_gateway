@@ -1,0 +1,87 @@
+import json
+import time
+import hashlib
+from dataclasses import dataclass
+
+TRANSMISSION_ENDPOINTS = {
+    "VA Disability Compensation": {
+        "office": "VA Terre Haute Clinic (CBOC)",
+        "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+        "phone": "800-427-5882",
+        "email": None
+    },
+    "VA Healthcare Enrollment": {
+        "office": "VA Terre Haute Clinic (CBOC)",
+        "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+        "phone": "800-427-5882",
+        "email": None
+    },
+    "Indiana Property Tax Exemption": {
+        "office": "Vigo County Veterans Assistance Office",
+        "address": "163 Oak Street, Terre Haute, IN 47807",
+        "phone": "812-462-3261",
+        "email": "veterans@vigocounty.in.gov"
+    }
+}
+
+@dataclass
+class ExportPacket:
+    program: str
+    payload: dict
+    checksum: str
+    timestamp: int
+
+def validate_checksum(payload, checksum):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest() == checksum
+
+def transmit_export(packet: ExportPacket):
+    endpoint = TRANSMISSION_ENDPOINTS.get(packet.program)
+
+    if not endpoint:
+        return {
+            "status": "ERROR",
+            "reason": "Unknown program",
+            "timestamp": int(time.time())
+        }
+
+    if not validate_checksum(packet.payload, packet.checksum):
+        return {
+            "status": "REJECTED",
+            "reason": "Checksum mismatch",
+            "timestamp": int(time.time())
+        }
+
+    return {
+        "status": "TRANSMITTED",
+        "program": packet.program,
+        "destination": endpoint,
+        "payload": packet.payload,
+        "checksum_verified": True,
+        "transmission_timestamp": int(time.time())
+    }
+
+def demo():
+    sample_payload = {
+        "member": {
+            "name": "DAO Veteran Member",
+            "dob": "1975-06-15",
+            "disability_rating": 70
+        },
+        "programs": ["VA Disability Compensation"],
+        "casefile_exported": True
+    }
+
+    checksum = hashlib.sha256(json.dumps(sample_payload, sort_keys=True).encode("utf-8")).hexdigest()
+
+    packet = ExportPacket(
+        program="VA Disability Compensation",
+        payload=sample_payload,
+        checksum=checksum,
+        timestamp=int(time.time())
+    )
+
+    print(transmit_export(packet))
+
+if __name__ == "__main__":
+    demo()
