@@ -1,0 +1,75 @@
+from dataclasses import dataclass
+import time
+
+@dataclass
+class CasefileRecord:
+    member_name: str
+    dob: str
+    disability_rating: int
+    programs: list
+    casefile: dict
+    timestamp: int
+
+class MasterRegistryIndex:
+    def __init__(self):
+        self.registry = {}
+
+    def register_casefile(self, member_id, casefile_record: CasefileRecord):
+        self.registry[member_id] = {
+            "member_name": casefile_record.member_name,
+            "dob": casefile_record.dob,
+            "disability_rating": casefile_record.disability_rating,
+            "programs": casefile_record.programs,
+            "casefile": casefile_record.casefile,
+            "timestamp": casefile_record.timestamp
+        }
+
+    def lookup(self, member_id):
+        return self.registry.get(member_id, {"error": "Member not found"})
+
+    def export_index(self):
+        return self.registry
+
+def demo():
+    sample_casefile = {
+        "member": {
+            "name": "DAO Veteran Member",
+            "dob": "1975-06-15",
+            "address": "Terre Haute, IN 47807",
+            "phone": "000-000-0000",
+            "email": "member@example.com",
+            "service_branch": "Army",
+            "disability_rating": 70,
+            "dd214_on_file": True
+        },
+        "program_activations": [
+            {
+                "program": "VA Disability Compensation",
+                "activation_state": "APPROVED",
+                "office": {
+                    "name": "VA Terre Haute Clinic (CBOC)",
+                    "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+                    "phone": "800-427-5882"
+                },
+                "documents_verified": True,
+                "activation_timestamp": int(time.time())
+            }
+        ],
+        "casefile_timestamp": int(time.time())
+    }
+
+    record = CasefileRecord(
+        member_name="DAO Veteran Member",
+        dob="1975-06-15",
+        disability_rating=70,
+        programs=["VA Disability Compensation"],
+        casefile=sample_casefile,
+        timestamp=int(time.time())
+    )
+
+    registry = MasterRegistryIndex()
+    registry.register_casefile("VET-001", record)
+    print(registry.export_index())
+
+if __name__ == "__main__":
+    demo()
