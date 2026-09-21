@@ -1,0 +1,91 @@
+from dataclasses import dataclass
+import time
+
+# --- Program Definitions ---
+PROGRAMS = [
+    "VA Disability Compensation",
+    "VA Healthcare Enrollment",
+    "Indiana Property Tax Exemption"
+]
+
+# --- Office Routing ---
+OFFICES = {
+    "primary": {
+        "name": "Vigo County Veterans Assistance Office",
+        "address": "163 Oak Street, Terre Haute, IN 47807",
+        "phone": "812-462-3261",
+        "email": "veterans@vigocounty.in.gov"
+    },
+    "secondary": {
+        "name": "VA Terre Haute Clinic (CBOC)",
+        "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+        "phone": "800-427-5882",
+        "email": None
+    }
+}
+
+# --- Document Requirements ---
+DOCUMENTS = {
+    "VA Disability Compensation": ["VA Form 21-526EZ", "DD214", "Medical Evidence"],
+    "VA Healthcare Enrollment": ["VA Form 10-10EZ", "DD214"],
+    "Indiana Property Tax Exemption": ["State Form 51781", "Disability Rating Letter", "Residency Proof"]
+}
+
+@dataclass
+class VeteranIntake:
+    full_name: str
+    dob: str
+    address: str
+    phone: str
+    email: str
+    service_branch: str
+    disability_rating: int
+    dd214_on_file: bool
+    income_monthly: float
+    household_size: int
+
+def fuse_programs(intake: VeteranIntake):
+    fused = {}
+
+    for program in PROGRAMS:
+        eligible = False
+
+        if program == "VA Disability Compensation":
+            eligible = intake.disability_rating >= 10
+
+        elif program == "VA Healthcare Enrollment":
+            eligible = True
+
+        elif program == "Indiana Property Tax Exemption":
+            eligible = intake.disability_rating >= 50
+
+        fused[program] = {
+            "eligible": eligible,
+            "member_name": intake.full_name,
+            "documents_needed": DOCUMENTS[program],
+            "office": OFFICES["primary"],
+            "timestamp": int(time.time())
+        }
+
+    return fused
+
+def demo():
+    sample = VeteranIntake(
+        full_name="DAO Veteran Member",
+        dob="1975-06-15",
+        address="Terre Haute, IN 47807",
+        phone="000-000-0000",
+        email="member@example.com",
+        service_branch="Army",
+        disability_rating=70,
+        dd214_on_file=True,
+        income_monthly=1200,
+        household_size=2
+    )
+
+    fused = fuse_programs(sample)
+    for program, packet in fused.items():
+        print(program, packet)
+
+if __name__ == "__main__":
+    demo()
