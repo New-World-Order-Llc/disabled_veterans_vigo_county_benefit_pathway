@@ -1,0 +1,83 @@
+from dataclasses import dataclass
+import time
+
+VETERAN_OFFICES = [
+    {
+        "name": "Vigo County Veterans Assistance Office",
+        "address": "163 Oak Street, Terre Haute, IN 47807",
+        "phone": "812-462-3261",
+        "email": "veterans@vigocounty.in.gov"
+    },
+    {
+        "name": "VA Terre Haute Clinic (CBOC)",
+        "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+        "phone": "800-427-5882",
+        "email": None
+    },
+    {
+        "name": "DAV Chapter 57",
+        "address": "1801 W Fort Harrison Road, Terre Haute, IN 47804",
+        "phone": "812-232-3910",
+        "email": "dav57th@gmail.com"
+    }
+]
+
+BENEFIT_PROGRAMS = [
+    "VA Disability Compensation",
+    "VA Healthcare Enrollment",
+    "Indiana Property Tax Exemption"
+]
+
+@dataclass
+class VeteranIntake:
+    full_name: str
+    dob: str
+    address: str
+    phone: str
+    email: str
+    service_branch: str
+    disability_rating: int
+    dd214_on_file: bool
+    income_monthly: float
+    household_size: int
+
+def route_veteran(intake: VeteranIntake):
+    primary_office = VETERAN_OFFICES[0]
+
+    eligibility = {
+        "disability_compensation": intake.disability_rating >= 10,
+        "va_healthcare": True,
+        "property_tax_exemption": intake.disability_rating >= 50
+    }
+
+    return {
+        "member": {
+            "name": intake.full_name,
+            "email": intake.email,
+            "phone": intake.phone
+        },
+        "preferred_office": primary_office,
+        "eligible_programs": [
+            program for program, ok in eligibility.items() if ok
+        ],
+        "raw_eligibility": eligibility,
+        "timestamp": int(time.time())
+    }
+
+def demo():
+    sample = VeteranIntake(
+        full_name="DAO Veteran Member",
+        dob="1975-06-15",
+        address="Terre Haute, IN 47807",
+        phone="000-000-0000",
+        email="member@example.com",
+        service_branch="Army",
+        disability_rating=70,
+        dd214_on_file=True,
+        income_monthly=1200,
+        household_size=2
+    )
+    print(route_veteran(sample))
+
+if __name__ == "__main__":
+    demo()
