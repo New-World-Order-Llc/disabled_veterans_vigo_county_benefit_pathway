@@ -1,0 +1,91 @@
+import time
+from dataclasses import dataclass
+
+@dataclass
+class RegistryRecord:
+    member_id: str
+    member_name: str
+    disability_rating: int
+    programs: list
+    casefile: dict
+    last_updated: int
+
+class RegistrySynchronizationEngine:
+    def __init__(self):
+        self.registry = {}
+
+    def load_registry(self, registry_dict):
+        self.registry = registry_dict
+
+    def sync_casefile(self, member_id, new_casefile):
+        if member_id not in self.registry:
+            return {
+                "status": "ERROR",
+                "message": "Member not found in registry",
+                "timestamp": int(time.time())
+            }
+
+        record = self.registry[member_id]
+
+        record["casefile"] = new_casefile
+        record["programs"] = [
+            activation["program"]
+            for activation in new_casefile.get("program_activations", [])
+        ]
+        record["disability_rating"] = new_casefile["member"]["disability_rating"]
+        record["last_updated"] = int(time.time())
+
+        return {
+            "status": "SYNCED",
+            "member_id": member_id,
+            "timestamp": record["last_updated"]
+        }
+
+    def full_export(self):
+        return self.registry
+
+def demo():
+    engine = RegistrySynchronizationEngine()
+
+    engine.load_registry({
+        "VET-001": {
+            "member_name": "DAO Veteran Member",
+            "disability_rating": 70,
+            "programs": ["VA Disability Compensation"],
+            "casefile": {},
+            "last_updated": int(time.time())
+        }
+    })
+
+    new_casefile = {
+        "member": {
+            "name": "DAO Veteran Member",
+            "dob": "1975-06-15",
+            "address": "Terre Haute, IN 47807",
+            "phone": "000-000-0000",
+            "email": "member@example.com",
+            "service_branch": "Army",
+            "disability_rating": 70,
+            "dd214_on_file": True
+        },
+        "program_activations": [
+            {
+                "program": "VA Disability Compensation",
+                "activation_state": "APPROVED",
+                "office": {
+                    "name": "VA Terre Haute Clinic (CBOC)",
+                    "address": "5080 Bill Farr Drive, Terre Haute, IN 47803",
+                    "phone": "800-427-5882"
+                },
+                "documents_verified": True,
+                "activation_timestamp": int(time.time())
+            }
+        ],
+        "casefile_timestamp": int(time.time())
+    }
+
+    print(engine.sync_casefile("VET-001", new_casefile))
+    print(engine.full_export())
+
+if __name__ == "__main__":
+    demo()
