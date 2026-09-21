@@ -1,0 +1,88 @@
+import json
+import time
+from dataclasses import dataclass
+
+@dataclass
+class GovernanceDecision:
+    subsystem: str
+    action: str
+    allowed: bool
+    reason: str
+    timestamp: int
+
+class BeastOperationalGovernor:
+    def __init__(self):
+        self.policies = {}
+        self.decision_log = []
+
+    def register_policy(self, subsystem_name, policy):
+        self.policies[subsystem_name] = policy
+
+    def evaluate_action(self, subsystem_name, action):
+        timestamp = int(time.time())
+
+        if subsystem_name not in self.policies:
+            decision = GovernanceDecision(
+                subsystem=subsystem_name,
+                action=action,
+                allowed=False,
+                reason="No policy registered",
+                timestamp=timestamp
+            )
+            self.decision_log.append(decision)
+            return decision
+
+        policy = self.policies[subsystem_name]
+
+        allowed_actions = policy.get("allowed_actions", [])
+        denied_actions = policy.get("denied_actions", [])
+
+        if action in denied_actions:
+            decision = GovernanceDecision(
+                subsystem=subsystem_name,
+                action=action,
+                allowed=False,
+                reason="Action explicitly denied",
+                timestamp=timestamp
+            )
+        elif action in allowed_actions:
+            decision = GovernanceDecision(
+                subsystem=subsystem_name,
+                action=action,
+                allowed=True,
+                reason="Action permitted by policy",
+                timestamp=timestamp
+            )
+        else:
+            decision = GovernanceDecision(
+                subsystem=subsystem_name,
+                action=action,
+                allowed=False,
+                reason="Action not defined in policy",
+                timestamp=timestamp
+            )
+
+        self.decision_log.append(decision)
+        return decision
+
+    def export_governor_manifest(self):
+        manifest = {
+            "system": "Beast System 3.0",
+            "policies": self.policies,
+            "decisions": [
+                {
+                    "subsystem": d.subsystem,
+                    "action": d.action,
+                    "allowed": d.allowed,
+                    "reason": d.reason,
+                    "timestamp": d.timestamp
+                }
+                for d in self.decision_log
+            ],
+            "export_timestamp": int(time.time())
+        }
+
+        manifest["governor_checksum"] = self._checksum(manifest)
+        manifest["sealed"] = True
+
+        return
