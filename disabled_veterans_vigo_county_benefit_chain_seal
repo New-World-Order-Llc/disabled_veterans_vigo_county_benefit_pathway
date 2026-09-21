@@ -1,0 +1,64 @@
+import json
+import hashlib
+import time
+from dataclasses import dataclass
+
+@dataclass
+class ChainComponent:
+    name: str
+    payload: dict
+    timestamp: int
+
+def compute_checksum(data):
+    encoded = json.dumps(data, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+def seal_chain(components: list):
+    chain_payload = {
+        "components": [
+            {
+                "name": c.name,
+                "timestamp": c.timestamp,
+                "payload": c.payload,
+                "component_checksum": compute_checksum(c.payload)
+            }
+            for c in components
+        ],
+        "chain_timestamp": int(time.time())
+    }
+
+    chain_payload["chain_checksum"] = compute_checksum(chain_payload)
+    chain_payload["sealed"] = True
+
+    return chain_payload
+
+def demo():
+    intake = ChainComponent(
+        name="Intake",
+        payload={"member": "DAO Veteran Member", "disability_rating": 70},
+        timestamp=int(time.time())
+    )
+
+    eligibility = ChainComponent(
+        name="Eligibility",
+        payload={"VA Disability Compensation": True},
+        timestamp=int(time.time())
+    )
+
+    activation = ChainComponent(
+        name="Activation",
+        payload={"VA Disability Compensation": "APPROVED"},
+        timestamp=int(time.time())
+    )
+
+    export = ChainComponent(
+        name="Export",
+        payload={"casefile_exported": True},
+        timestamp=int(time.time())
+    )
+
+    chain = seal_chain([intake, eligibility, activation, export])
+    print(json.dumps(chain, indent=2))
+
+if __name__ == "__main__":
+    demo()
