@@ -1,0 +1,100 @@
+from dataclasses import dataclass
+import time
+
+@dataclass
+class VeteranIntake:
+    full_name: str
+    dob: str
+    address: str
+    phone: str
+    email: str
+    service_branch: str
+    disability_rating: int
+    dd214_on_file: bool
+    income_monthly: float
+    household_size: int
+
+@dataclass
+class ActivationPacket:
+    program: str
+    activation_state: str
+    office_name: str
+    office_address: str
+    office_phone: str
+    documents_verified: bool
+    timestamp: int
+
+def generate_casefile(intake: VeteranIntake, activation_packets: list):
+    casefile = {
+        "member": {
+            "name": intake.full_name,
+            "dob": intake.dob,
+            "address": intake.address,
+            "phone": intake.phone,
+            "email": intake.email,
+            "service_branch": intake.service_branch,
+            "disability_rating": intake.disability_rating,
+            "dd214_on_file": intake.dd214_on_file
+        },
+        "household": {
+            "income_monthly": intake.income_monthly,
+            "household_size": intake.household_size
+        },
+        "program_activations": [],
+        "casefile_timestamp": int(time.time())
+    }
+
+    for packet in activation_packets:
+        casefile["program_activations"].append({
+            "program": packet.program,
+            "activation_state": packet.activation_state,
+            "office": {
+                "name": packet.office_name,
+                "address": packet.office_address,
+                "phone": packet.office_phone
+            },
+            "documents_verified": packet.documents_verified,
+            "activation_timestamp": packet.timestamp
+        })
+
+    return casefile
+
+def demo():
+    intake = VeteranIntake(
+        full_name="DAO Veteran Member",
+        dob="1975-06-15",
+        address="Terre Haute, IN 47807",
+        phone="000-000-0000",
+        email="member@example.com",
+        service_branch="Army",
+        disability_rating=70,
+        dd214_on_file=True,
+        income_monthly=1200,
+        household_size=2
+    )
+
+    activation_packets = [
+        ActivationPacket(
+            program="VA Disability Compensation",
+            activation_state="APPROVED",
+            office_name="VA Terre Haute Clinic (CBOC)",
+            office_address="5080 Bill Farr Drive, Terre Haute, IN 47803",
+            office_phone="800-427-5882",
+            documents_verified=True,
+            timestamp=int(time.time())
+        ),
+        ActivationPacket(
+            program="Indiana Property Tax Exemption",
+            activation_state="APPROVED",
+            office_name="Vigo County Veterans Assistance Office",
+            office_address="163 Oak Street, Terre Haute, IN 47807",
+            office_phone="812-462-3261",
+            documents_verified=True,
+            timestamp=int(time.time())
+        )
+    ]
+
+    print(generate_casefile(intake, activation_packets))
+
+if __name__ == "__main__":
+    demo()
