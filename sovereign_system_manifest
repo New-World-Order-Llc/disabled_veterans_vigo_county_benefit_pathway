@@ -1,0 +1,57 @@
+import json
+import time
+from dataclasses import dataclass
+
+@dataclass
+class SubsystemDescriptor:
+    name: str
+    version: str
+    checksum: str
+    registered_timestamp: int
+
+def compute_checksum(payload):
+    encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+    import hashlib
+    return hashlib.sha256(encoded).hexdigest()
+
+class SovereignSystemManifest:
+    def __init__(self):
+        self.subsystems = {}
+        self.generated_timestamp = None
+
+    def register_subsystem(self, name, version="1.0.0"):
+        timestamp = int(time.time())
+        descriptor_payload = {
+            "name": name,
+            "version": version,
+            "timestamp": timestamp
+        }
+        checksum = compute_checksum(descriptor_payload)
+
+        descriptor = SubsystemDescriptor(
+            name=name,
+            version=version,
+            checksum=checksum,
+            registered_timestamp=timestamp
+        )
+
+        self.subsystems[name] = descriptor
+
+    def generate_manifest(self):
+        self.generated_timestamp = int(time.time())
+
+        manifest_payload = {
+            "system": "Beast System 3.0",
+            "governance_layer": "New World Order DAO",
+            "generated_timestamp": self.generated_timestamp,
+            "subsystems": {
+                name: {
+                    "version": desc.version,
+                    "checksum": desc.checksum,
+                    "registered_timestamp": desc.registered_timestamp
+                }
+                for name, desc in self.subsystems.items()
+            }
+        }
+
+        manifest_payload["sovereign_checksum
